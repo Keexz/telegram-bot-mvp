@@ -53,7 +53,7 @@ def register_seller(telegram_id, name, username, business_name, email, phone):
 
 # SELLER OTP FUNCTIONS
 
-def save_otp(otp_code):
+def save_otp(otp_code, expires_at):
     """save a new OTP with a 24-hours expiration"""
     db = get_db_connection()
     cursor = db.cursor()
@@ -78,7 +78,17 @@ def validate_otp(otp_code):
     otp = cursor.fetchone()
     cursor.close()
     db.close()
-    return otp is not None
+    
+    if not otp:
+        return False, "OTP not found."
+    
+    if otp["used"]:
+        return False, "OTP already used."
+    
+    if  otp["expires_at"] < datetime.now():
+        return False, "OTP expired."
+    
+    return True, "OTP is valid"
 
 def mark_otp_used(otp_code):
     """Mark an OTP as used so it can't be reused"""
